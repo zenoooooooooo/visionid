@@ -54,3 +54,4 @@ config.ini
 secrets.py
 .env
 *.key
+data/
