@@ -1,6 +1,8 @@
 from utils.camera import Camera
 from utils.face_detector import FaceDetector
 from utils.face_recognizer import FaceRecognizer
+from utils.pipeline import Pipeline
+from stream_server import stream_server, start_server
 import cv2
 
 def enroll_mode(cam, detector, recognizer):
@@ -53,31 +55,28 @@ def enroll_mode(cam, detector, recognizer):
     cv2.destroyAllWindows()
 
 def recognize_mode(cam, detector, recognizer):
+    from utils.pipeline import Pipeline
     print("Recognition mode. Press Q to quit")
+    pipeline = Pipeline(cam, detector, recognizer)
 
     while True:
-        frame = cam.read()
+        frame, results = pipeline.get()
         if frame is None:
-            break
+            continue
 
-        faces = detector.detect(frame)
-
-        for (x1, y1, x2, y2, confidence) in faces:
-            face_img = frame[y1:y2, x1:x2]
-            if face_img.size == 0:
-                continue
-
-            name, score = recognizer.recognize(face_img)
-
+        for (x1, y1, x2, y2, name, score) in results:
             color = (0, 255, 0) if name != "Unknown" else (0, 0, 255)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
             cv2.putText(frame, f"{name} ({score:.2f})", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
+        stream_server.update_frame(frame)
+
         cv2.imshow("VisionID - Recognize", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
+    pipeline.stop()
     cv2.destroyAllWindows()
 
 def main():
@@ -85,6 +84,8 @@ def main():
     print("1. Enroll face")
     print("2. Recognize faces")
     choice = input("Select mode (1 or 2): ").strip()
+
+    start_server()
 
     cam = Camera()
     detector = FaceDetector()
