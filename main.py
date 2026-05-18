@@ -3,6 +3,8 @@ from utils.face_detector import FaceDetector
 from utils.face_recognizer import FaceRecognizer
 from utils.pipeline import Pipeline
 from stream_server import stream_server, start_server
+from datetime import datetime
+
 import cv2
 
 def enroll_mode(cam, detector, recognizer):
@@ -70,6 +72,11 @@ def recognize_mode(cam, detector, recognizer):
             cv2.putText(frame, f"{name} ({score:.2f})", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
+
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        h, w = frame.shape[:2]
+        cv2.putText(frame, timestamp, (10, h - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
         stream_server.update_frame(frame)
 
         cv2.imshow("VisionID - Recognize", frame)
